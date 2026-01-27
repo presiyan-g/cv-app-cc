@@ -75,7 +75,17 @@ export function PersonalInfoPanel() {
         placeholder="linkedin.com/in/johndoe"
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Select
+          label="Photo Position"
+          value={personalInfo.photoPosition}
+          onChange={e => updatePersonalInfo({ photoPosition: e.target.value as 'left' | 'right' | 'none' })}
+          options={[
+            { value: 'left', label: 'Left' },
+            { value: 'right', label: 'Right' },
+            { value: 'none', label: 'Hidden' },
+          ]}
+        />
         <Select
           label="Photo Shape"
           value={personalInfo.photoShape}

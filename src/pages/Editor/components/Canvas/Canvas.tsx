@@ -90,9 +90,12 @@ export function Canvas() {
         >
         {/* Header / Personal Info */}
         <header className="mb-6 pb-4 border-b-2" style={{ borderColor: theme.primaryColor }}>
-          <div className="flex items-start gap-4">
+          <div className={cn(
+            'flex items-start gap-4',
+            personalInfo.photoPosition === 'right' && 'flex-row-reverse'
+          )}>
             {/* Photo */}
-            {personalInfo.photo && (
+            {personalInfo.photo && personalInfo.photoPosition !== 'none' && (
               <div
                 className={cn(
                   'shrink-0 overflow-hidden',

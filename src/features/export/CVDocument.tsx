@@ -199,8 +199,11 @@ export function CVDocument({ cv }: CVDocumentProps) {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerContent}>
-            {personalInfo.photo && (
+          <View style={{
+            ...styles.headerContent,
+            flexDirection: personalInfo.photoPosition === 'right' ? 'row-reverse' : 'row',
+          }}>
+            {personalInfo.photo && personalInfo.photoPosition !== 'none' && (
               <Image src={personalInfo.photo} style={styles.photo} />
             )}
             <View style={styles.headerInfo}>

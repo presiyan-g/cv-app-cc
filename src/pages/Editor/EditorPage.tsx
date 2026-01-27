@@ -6,13 +6,22 @@ import { Button } from '../../components/ui';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { Canvas } from './components/Canvas/Canvas';
 import { ControlsPanel } from './components/Controls/ControlsPanel';
+import { ResizeHandle } from './components/ResizeHandle';
 import { debounce } from '../../lib/utils';
+
+const SIDEBAR_MIN_WIDTH = 280;
+const SIDEBAR_MAX_WIDTH = 600;
+const SIDEBAR_DEFAULT_WIDTH = 384;
 
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
   const { cv, isDirty, isSaving, lastSaved, loadCV, save, saveRevision, reset } = useCVStore();
   const [isLoading, setIsLoading] = useState(true);
   const [activePanel, setActivePanel] = useState<'edit' | 'preview' | 'style'>('edit');
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('cv-editor-sidebar-width');
+    return saved ? Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, parseInt(saved, 10))) : SIDEBAR_DEFAULT_WIDTH;
+  });
 
   useEffect(() => {
     if (id) {
@@ -46,6 +55,16 @@ export function EditorPage() {
     window.addEventListener('blur', handleBlur);
     return () => window.removeEventListener('blur', handleBlur);
   }, [isDirty, save]);
+
+  // Persist sidebar width
+  useEffect(() => {
+    localStorage.setItem('cv-editor-sidebar-width', String(sidebarWidth));
+  }, [sidebarWidth]);
+
+  // Handle sidebar resize
+  const handleSidebarResize = useCallback((delta: number) => {
+    setSidebarWidth(prev => Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, prev + delta)));
+  }, []);
 
   if (isLoading) {
     return (
@@ -102,11 +121,19 @@ export function EditorPage() {
 
       {/* Editor Content */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Sidebar */}
-        <div className={`w-full lg:w-80 bg-white border-r border-gray-200 overflow-y-auto shrink-0 pb-16 lg:pb-0 ${
-          activePanel === 'edit' ? 'block' : 'hidden lg:block'
-        }`}>
-          <Sidebar />
+        {/* Sidebar with resize handle */}
+        <div
+          className={`relative shrink-0 w-full lg:w-auto ${
+            activePanel === 'edit' ? 'flex' : 'hidden lg:flex'
+          }`}
+          style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
+        >
+          <div
+            className="w-full lg:w-[var(--sidebar-width)] bg-white border-r border-gray-200 overflow-y-auto pb-16 lg:pb-0"
+          >
+            <Sidebar />
+          </div>
+          <ResizeHandle onResize={handleSidebarResize} />
         </div>
 
         {/* Canvas (Preview) */}

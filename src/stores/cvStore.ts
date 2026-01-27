@@ -51,9 +51,14 @@ export const useCVStore = create<CVState>()(
 
     loadCV: async (id: string) => {
       const cv = await storageService.getCV(id);
-      // Migrate older CVs to include new theme properties
-      if (cv && !cv.theme.separatorColor) {
-        cv.theme.separatorColor = DEFAULT_THEME.separatorColor;
+      // Migrate older CVs to include new properties
+      if (cv) {
+        if (!cv.theme.separatorColor) {
+          cv.theme.separatorColor = DEFAULT_THEME.separatorColor;
+        }
+        if (!cv.personalInfo.photoPosition) {
+          cv.personalInfo.photoPosition = DEFAULT_PERSONAL_INFO.photoPosition;
+        }
       }
       set(state => {
         state.cv = cv;

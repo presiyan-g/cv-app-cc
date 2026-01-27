@@ -32,6 +32,7 @@ export interface PersonalInfo {
   photo?: string; // base64 encoded
   photoShape: 'circle' | 'square' | 'rounded';
   photoSize: 'small' | 'medium' | 'large';
+  photoPosition: 'left' | 'right' | 'none';
 }
 
 export interface Section {
@@ -185,6 +186,7 @@ export const DEFAULT_PERSONAL_INFO: PersonalInfo = {
   linkedin: '',
   photoShape: 'circle',
   photoSize: 'medium',
+  photoPosition: 'left',
 };
 
 export const DEFAULT_LAYOUT: LayoutSettings = {
