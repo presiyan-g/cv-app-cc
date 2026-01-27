@@ -10,6 +10,7 @@ export interface CV {
   sections: Section[];
   layout: LayoutSettings;
   theme: ThemeSettings;
+  header: HeaderSettings;
 }
 
 export interface CVMetadata {
@@ -154,6 +155,15 @@ export interface ThemeSettings {
   headingStyle: 'uppercase' | 'normal';
 }
 
+export interface HeaderSettings {
+  layout: 'classic' | 'modern' | 'centered' | 'minimal';
+  showSummaryInHeader: boolean;
+  contactLayout: 'inline' | 'stacked' | 'two-column';
+}
+
+export type HeaderLayout = HeaderSettings['layout'];
+export type ContactLayout = HeaderSettings['contactLayout'];
+
 export type FontFamily = 'Inter' | 'Roboto' | 'Open Sans' | 'Lato' | 'Merriweather';
 
 export interface Revision {
@@ -203,6 +213,12 @@ export const DEFAULT_THEME: ThemeSettings = {
   fontSize: 'medium',
   lineHeight: 'normal',
   headingStyle: 'normal',
+};
+
+export const DEFAULT_HEADER: HeaderSettings = {
+  layout: 'classic',
+  showSummaryInHeader: false,
+  contactLayout: 'inline',
 };
 
 export const FONT_FAMILIES: FontFamily[] = ['Inter', 'Roboto', 'Open Sans', 'Lato', 'Merriweather'];

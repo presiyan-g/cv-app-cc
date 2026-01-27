@@ -7,12 +7,14 @@ import type {
   SectionEntry,
   LayoutSettings,
   ThemeSettings,
+  HeaderSettings,
   Revision
 } from '../features/cv/types';
 import {
   DEFAULT_PERSONAL_INFO,
   DEFAULT_LAYOUT,
   DEFAULT_THEME,
+  DEFAULT_HEADER,
   DEFAULT_SECTIONS
 } from '../features/cv/types';
 import { storageService } from '../services/storage/StorageService';
@@ -36,6 +38,7 @@ interface CVState {
   reorderEntries: (sectionId: string, entryIds: string[]) => void;
   updateLayout: (layout: Partial<LayoutSettings>) => void;
   updateTheme: (theme: Partial<ThemeSettings>) => void;
+  updateHeader: (header: Partial<HeaderSettings>) => void;
   updateName: (name: string) => void;
   save: () => Promise<void>;
   saveRevision: () => Promise<void>;
@@ -58,6 +61,9 @@ export const useCVStore = create<CVState>()(
         }
         if (!cv.personalInfo.photoPosition) {
           cv.personalInfo.photoPosition = DEFAULT_PERSONAL_INFO.photoPosition;
+        }
+        if (!cv.header) {
+          cv.header = { ...DEFAULT_HEADER };
         }
       }
       set(state => {
@@ -83,6 +89,7 @@ export const useCVStore = create<CVState>()(
         })),
         layout: { ...DEFAULT_LAYOUT },
         theme: { ...DEFAULT_THEME },
+        header: { ...DEFAULT_HEADER },
       };
 
       await storageService.saveCV(cv);
@@ -210,6 +217,16 @@ export const useCVStore = create<CVState>()(
       set(state => {
         if (state.cv) {
           state.cv.theme = { ...state.cv.theme, ...theme };
+          state.cv.updatedAt = Date.now();
+          state.isDirty = true;
+        }
+      });
+    },
+
+    updateHeader: (header: Partial<HeaderSettings>) => {
+      set(state => {
+        if (state.cv) {
+          state.cv.header = { ...state.cv.header, ...header };
           state.cv.updatedAt = Date.now();
           state.isDirty = true;
         }

@@ -1,17 +1,76 @@
 import { useCVStore } from '../../../../stores/cvStore';
 import { Select, Slider } from '../../../../components/ui';
 import { FONT_FAMILIES, THEME_COLORS } from '../../../../features/cv/types';
+import type { HeaderLayout, ContactLayout } from '../../../../features/cv/types';
 import { cn } from '../../../../lib/utils';
 
 export function ControlsPanel() {
-  const { cv, updateLayout, updateTheme } = useCVStore();
+  const { cv, updateLayout, updateTheme, updateHeader } = useCVStore();
 
   if (!cv) return null;
 
-  const { layout, theme } = cv;
+  const { layout, theme, header } = cv;
 
   return (
     <div className="p-4 pb-20 lg:pb-4 space-y-6">
+      {/* Header Settings */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+          Header
+        </h2>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Header Layout
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: 'classic', label: 'Classic' },
+                { value: 'modern', label: 'Modern' },
+                { value: 'centered', label: 'Centered' },
+                { value: 'minimal', label: 'Minimal' },
+              ].map(option => (
+                <button
+                  key={option.value}
+                  onClick={() => updateHeader({ layout: option.value as HeaderLayout })}
+                  className={cn(
+                    'py-2 px-3 rounded-lg border text-sm font-medium transition-colors',
+                    header.layout === option.value
+                      ? 'bg-primary-50 border-primary-300 text-primary-700'
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Select
+            label="Contact Layout"
+            value={header.contactLayout}
+            onChange={e => updateHeader({ contactLayout: e.target.value as ContactLayout })}
+            options={[
+              { value: 'inline', label: 'Inline (Row)' },
+              { value: 'stacked', label: 'Stacked (Column)' },
+              { value: 'two-column', label: 'Two Column' },
+            ]}
+          />
+
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={header.showSummaryInHeader}
+              onChange={e => updateHeader({ showSummaryInHeader: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm text-gray-700">Show summary in header</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Layout Settings */}
       <div>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
           Layout

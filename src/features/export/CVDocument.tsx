@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Image,
 } from '@react-pdf/renderer';
-import type { CV, Section, ExperienceEntry, EducationEntry, SkillsEntry, ProjectEntry, CertificationEntry, LanguageEntry, AwardEntry, SummaryEntry } from '../cv/types';
+import type { CV, Section, ExperienceEntry, EducationEntry, SkillsEntry, ProjectEntry, CertificationEntry, LanguageEntry, AwardEntry, SummaryEntry, HeaderSettings, PersonalInfo } from '../cv/types';
 import { hexToRgba } from '../../lib/utils';
 
 // Using built-in Helvetica font (no registration needed)
@@ -56,9 +56,54 @@ const createStyles = (theme: CV['theme']) =>
       gap: 12,
       marginTop: 8,
     },
+    contactRowStacked: {
+      flexDirection: 'column',
+      gap: 4,
+      marginTop: 8,
+    },
+    contactRowTwoColumn: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 8,
+    },
+    contactRowCentered: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      marginTop: 8,
+      justifyContent: 'center',
+    },
     contactItem: {
       fontSize: 9,
       color: '#6B7280',
+    },
+    headerCentered: {
+      marginBottom: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 2,
+      borderBottomColor: theme.primaryColor,
+      alignItems: 'center',
+    },
+    headerMinimal: {
+      marginBottom: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 2,
+      borderBottomColor: theme.primaryColor,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      flexWrap: 'wrap',
+    },
+    nameLarge: {
+      fontSize: 24,
+      fontWeight: 700,
+      color: theme.primaryColor,
+    },
+    summaryInHeader: {
+      marginTop: 10,
+      fontSize: 9,
+      color: '#4B5563',
     },
     section: {
       marginBottom: 12,
@@ -191,36 +236,29 @@ interface CVDocumentProps {
 
 export function CVDocument({ cv }: CVDocumentProps) {
   const styles = createStyles(cv.theme);
-  const { personalInfo, sections } = cv;
-  const enabledSections = sections.filter(s => s.enabled).sort((a, b) => a.order - b.order);
+  const { personalInfo, sections, header } = cv;
+
+  // Get summary content for header if showSummaryInHeader is enabled
+  const summarySection = sections.find(s => s.type === 'summary' && s.enabled);
+  const summaryContent = header.showSummaryInHeader && summarySection?.entries[0]
+    ? stripHtmlTags((summarySection.entries[0] as SummaryEntry).content)
+    : null;
+
+  // Filter sections - skip summary if it's shown in header
+  const enabledSections = sections
+    .filter(s => s.enabled && !(s.type === 'summary' && header.showSummaryInHeader))
+    .sort((a, b) => a.order - b.order);
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         {/* Header */}
-        <View style={styles.header}>
-          <View style={{
-            ...styles.headerContent,
-            flexDirection: personalInfo.photoPosition === 'right' ? 'row-reverse' : 'row',
-          }}>
-            {personalInfo.photo && personalInfo.photoPosition !== 'none' && (
-              <Image src={personalInfo.photo} style={styles.photo} />
-            )}
-            <View style={styles.headerInfo}>
-              <Text style={styles.name}>
-                {personalInfo.firstName} {personalInfo.lastName}
-              </Text>
-              {personalInfo.title && <Text style={styles.title}>{personalInfo.title}</Text>}
-              <View style={styles.contactRow}>
-                {personalInfo.email && <Text style={styles.contactItem}>{personalInfo.email}</Text>}
-                {personalInfo.phone && <Text style={styles.contactItem}>{personalInfo.phone}</Text>}
-                {personalInfo.location && <Text style={styles.contactItem}>{personalInfo.location}</Text>}
-                {personalInfo.website && <Text style={styles.contactItem}>{personalInfo.website}</Text>}
-                {personalInfo.linkedin && <Text style={styles.contactItem}>{personalInfo.linkedin}</Text>}
-              </View>
-            </View>
-          </View>
-        </View>
+        <PDFHeader
+          personalInfo={personalInfo}
+          header={header}
+          summaryContent={summaryContent}
+          styles={styles}
+        />
 
         {/* Sections */}
         {enabledSections.map(section => (
@@ -232,6 +270,137 @@ export function CVDocument({ cv }: CVDocumentProps) {
       </Page>
     </Document>
   );
+}
+
+// PDF Header Component with layout variants
+interface PDFHeaderProps {
+  personalInfo: PersonalInfo;
+  header: HeaderSettings;
+  summaryContent: string | null;
+  styles: ReturnType<typeof createStyles>;
+}
+
+function PDFHeader({ personalInfo, header, summaryContent, styles }: PDFHeaderProps) {
+  const getContactRowStyle = () => {
+    switch (header.contactLayout) {
+      case 'stacked':
+        return styles.contactRowStacked;
+      case 'two-column':
+        return styles.contactRowTwoColumn;
+      default:
+        return styles.contactRow;
+    }
+  };
+
+  const renderPhoto = () => {
+    if (!personalInfo.photo || personalInfo.photoPosition === 'none') return null;
+    return <Image src={personalInfo.photo} style={styles.photo} />;
+  };
+
+  const renderContactItems = () => (
+    <>
+      {personalInfo.email && <Text style={styles.contactItem}>{personalInfo.email}</Text>}
+      {personalInfo.phone && <Text style={styles.contactItem}>{personalInfo.phone}</Text>}
+      {personalInfo.location && <Text style={styles.contactItem}>{personalInfo.location}</Text>}
+      {personalInfo.website && <Text style={styles.contactItem}>{personalInfo.website}</Text>}
+      {personalInfo.linkedin && <Text style={styles.contactItem}>{personalInfo.linkedin}</Text>}
+    </>
+  );
+
+  const renderSummary = () => {
+    if (!summaryContent) return null;
+    return <Text style={styles.summaryInHeader}>{summaryContent}</Text>;
+  };
+
+  // Classic Layout
+  if (header.layout === 'classic') {
+    return (
+      <View style={styles.header}>
+        <View style={{
+          ...styles.headerContent,
+          flexDirection: personalInfo.photoPosition === 'right' ? 'row-reverse' : 'row',
+        }}>
+          {renderPhoto()}
+          <View style={styles.headerInfo}>
+            <Text style={styles.name}>
+              {personalInfo.firstName} {personalInfo.lastName}
+            </Text>
+            {personalInfo.title && <Text style={styles.title}>{personalInfo.title}</Text>}
+            <View style={getContactRowStyle()}>
+              {renderContactItems()}
+            </View>
+            {renderSummary()}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // Modern Layout
+  if (header.layout === 'modern') {
+    return (
+      <View style={styles.header}>
+        <View style={{ ...styles.headerContent, justifyContent: 'space-between' }}>
+          <View style={styles.headerInfo}>
+            <Text style={styles.nameLarge}>
+              {personalInfo.firstName} {personalInfo.lastName}
+            </Text>
+            {personalInfo.title && <Text style={{ ...styles.title, fontSize: 14 }}>{personalInfo.title}</Text>}
+            <View style={getContactRowStyle()}>
+              {renderContactItems()}
+            </View>
+          </View>
+          {renderPhoto()}
+        </View>
+        {renderSummary()}
+      </View>
+    );
+  }
+
+  // Centered Layout
+  if (header.layout === 'centered') {
+    return (
+      <View style={styles.headerCentered}>
+        {personalInfo.photo && personalInfo.photoPosition !== 'none' && (
+          <View style={{ marginBottom: 8 }}>
+            {renderPhoto()}
+          </View>
+        )}
+        <Text style={{ ...styles.name, textAlign: 'center' }}>
+          {personalInfo.firstName} {personalInfo.lastName}
+        </Text>
+        {personalInfo.title && <Text style={{ ...styles.title, textAlign: 'center' }}>{personalInfo.title}</Text>}
+        <View style={styles.contactRowCentered}>
+          {renderContactItems()}
+        </View>
+        {renderSummary()}
+      </View>
+    );
+  }
+
+  // Minimal Layout
+  if (header.layout === 'minimal') {
+    return (
+      <View style={styles.headerMinimal}>
+        <View>
+          <Text style={styles.name}>
+            {personalInfo.firstName} {personalInfo.lastName}
+          </Text>
+          {personalInfo.title && <Text style={styles.title}>{personalInfo.title}</Text>}
+        </View>
+        <View style={{ ...styles.contactRow, marginTop: 0, fontSize: 8 }}>
+          {renderContactItems()}
+        </View>
+        {summaryContent && (
+          <View style={{ width: '100%', marginTop: 8 }}>
+            {renderSummary()}
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  return null;
 }
 
 interface SectionContentProps {

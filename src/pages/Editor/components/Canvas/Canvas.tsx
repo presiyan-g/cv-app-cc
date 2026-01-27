@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCVStore } from '../../../../stores/cvStore';
 import { cn, formatDate, hexToRgba } from '../../../../lib/utils';
-import type { Section, ExperienceEntry, EducationEntry, SkillsEntry, ProjectEntry, CertificationEntry, LanguageEntry, AwardEntry, SummaryEntry } from '../../../../features/cv/types';
+import type { Section, ExperienceEntry, EducationEntry, SkillsEntry, ProjectEntry, CertificationEntry, LanguageEntry, AwardEntry, SummaryEntry, HeaderSettings, PersonalInfo, ThemeSettings } from '../../../../features/cv/types';
 
 export function Canvas() {
   const { cv } = useCVStore();
@@ -34,8 +34,18 @@ export function Canvas() {
 
   if (!cv) return null;
 
-  const { personalInfo, sections, layout, theme } = cv;
-  const enabledSections = sections.filter(s => s.enabled).sort((a, b) => a.order - b.order);
+  const { personalInfo, sections, layout, theme, header } = cv;
+
+  // Get summary content for header if showSummaryInHeader is enabled
+  const summarySection = sections.find(s => s.type === 'summary' && s.enabled);
+  const summaryContent = header.showSummaryInHeader && summarySection?.entries[0]
+    ? (summarySection.entries[0] as SummaryEntry).content
+    : null;
+
+  // Filter sections - skip summary if it's shown in header
+  const enabledSections = sections
+    .filter(s => s.enabled && !(s.type === 'summary' && header.showSummaryInHeader))
+    .sort((a, b) => a.order - b.order);
 
   const fontSizeClasses = {
     small: 'text-xs',
@@ -89,86 +99,14 @@ export function Canvas() {
           } as React.CSSProperties}
         >
         {/* Header / Personal Info */}
-        <header className="mb-6 pb-4 border-b-2" style={{ borderColor: theme.primaryColor }}>
-          <div className={cn(
-            'flex items-start gap-4',
-            personalInfo.photoPosition === 'right' && 'flex-row-reverse'
-          )}>
-            {/* Photo */}
-            {personalInfo.photo && personalInfo.photoPosition !== 'none' && (
-              <div
-                className={cn(
-                  'shrink-0 overflow-hidden',
-                  photoSizeClasses[personalInfo.photoSize],
-                  photoShapeClasses[personalInfo.photoShape]
-                )}
-              >
-                <img
-                  src={personalInfo.photo}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            {/* Name & Contact */}
-            <div className="flex-1">
-              <h1
-                className="text-2xl font-bold"
-                style={{ color: theme.primaryColor }}
-              >
-                {personalInfo.firstName} {personalInfo.lastName}
-              </h1>
-              {personalInfo.title && (
-                <p className="text-lg text-gray-600 mt-1">{personalInfo.title}</p>
-              )}
-
-              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-gray-600">
-                {personalInfo.email && (
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    {personalInfo.email}
-                  </span>
-                )}
-                {personalInfo.phone && (
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    {personalInfo.phone}
-                  </span>
-                )}
-                {personalInfo.location && (
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {personalInfo.location}
-                  </span>
-                )}
-                {personalInfo.website && (
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                    </svg>
-                    {personalInfo.website}
-                  </span>
-                )}
-                {personalInfo.linkedin && (
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                    </svg>
-                    {personalInfo.linkedin}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <HeaderRenderer
+          personalInfo={personalInfo}
+          header={header}
+          theme={theme}
+          summaryContent={summaryContent}
+          photoSizeClasses={photoSizeClasses}
+          photoShapeClasses={photoShapeClasses}
+        />
 
         {/* Sections */}
         {layout.columns === 1 ? (
@@ -412,4 +350,249 @@ function AwardsRenderer({ entries }: { entries: AwardEntry[] }) {
       ))}
     </>
   );
+}
+
+// Header Layout Components
+
+interface HeaderRendererProps {
+  personalInfo: PersonalInfo;
+  header: HeaderSettings;
+  theme: ThemeSettings;
+  summaryContent: string | null;
+  photoSizeClasses: Record<string, string>;
+  photoShapeClasses: Record<string, string>;
+}
+
+function HeaderRenderer({ personalInfo, header, theme, summaryContent, photoSizeClasses, photoShapeClasses }: HeaderRendererProps) {
+  const renderPhoto = () => {
+    if (!personalInfo.photo || personalInfo.photoPosition === 'none') return null;
+    return (
+      <div
+        className={cn(
+          'shrink-0 overflow-hidden',
+          photoSizeClasses[personalInfo.photoSize],
+          photoShapeClasses[personalInfo.photoShape]
+        )}
+      >
+        <img
+          src={personalInfo.photo}
+          alt="Profile"
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  };
+
+  const renderSummary = () => {
+    if (!summaryContent) return null;
+    return (
+      <div
+        className="mt-3 text-gray-700 prose prose-sm max-w-none"
+        dangerouslySetInnerHTML={{ __html: summaryContent }}
+      />
+    );
+  };
+
+  // Classic Layout: Photo left/right, name & contact next to it (original layout)
+  if (header.layout === 'classic') {
+    return (
+      <header className="mb-6 pb-4 border-b-2" style={{ borderColor: theme.primaryColor }}>
+        <div className={cn(
+          'flex items-start gap-4',
+          personalInfo.photoPosition === 'right' && 'flex-row-reverse'
+        )}>
+          {renderPhoto()}
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold" style={{ color: theme.primaryColor }}>
+              {personalInfo.firstName} {personalInfo.lastName}
+            </h1>
+            {personalInfo.title && (
+              <p className="text-lg text-gray-600 mt-1">{personalInfo.title}</p>
+            )}
+            <ContactInfo personalInfo={personalInfo} layout={header.contactLayout} />
+            {renderSummary()}
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  // Modern Layout: Full-width name, photo on right side, summary below
+  if (header.layout === 'modern') {
+    return (
+      <header className="mb-6 pb-4 border-b-2" style={{ borderColor: theme.primaryColor }}>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold" style={{ color: theme.primaryColor }}>
+              {personalInfo.firstName} {personalInfo.lastName}
+            </h1>
+            {personalInfo.title && (
+              <p className="text-xl text-gray-600 mt-1">{personalInfo.title}</p>
+            )}
+            <ContactInfo personalInfo={personalInfo} layout={header.contactLayout} />
+          </div>
+          {renderPhoto()}
+        </div>
+        {renderSummary()}
+      </header>
+    );
+  }
+
+  // Centered Layout: Everything centered, photo above name
+  if (header.layout === 'centered') {
+    return (
+      <header className="mb-6 pb-4 border-b-2 text-center" style={{ borderColor: theme.primaryColor }}>
+        {personalInfo.photo && personalInfo.photoPosition !== 'none' && (
+          <div className="flex justify-center mb-3">
+            {renderPhoto()}
+          </div>
+        )}
+        <h1 className="text-2xl font-bold" style={{ color: theme.primaryColor }}>
+          {personalInfo.firstName} {personalInfo.lastName}
+        </h1>
+        {personalInfo.title && (
+          <p className="text-lg text-gray-600 mt-1">{personalInfo.title}</p>
+        )}
+        <ContactInfo personalInfo={personalInfo} layout={header.contactLayout} centered />
+        {renderSummary()}
+      </header>
+    );
+  }
+
+  // Minimal Layout: No photo, compact name & contact
+  if (header.layout === 'minimal') {
+    return (
+      <header className="mb-6 pb-4 border-b-2" style={{ borderColor: theme.primaryColor }}>
+        <div className="flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: theme.primaryColor }}>
+              {personalInfo.firstName} {personalInfo.lastName}
+            </h1>
+            {personalInfo.title && (
+              <p className="text-gray-600">{personalInfo.title}</p>
+            )}
+          </div>
+          <ContactInfo personalInfo={personalInfo} layout="inline" compact />
+        </div>
+        {renderSummary()}
+      </header>
+    );
+  }
+
+  // Fallback to classic
+  return null;
+}
+
+interface ContactInfoProps {
+  personalInfo: PersonalInfo;
+  layout: 'inline' | 'stacked' | 'two-column';
+  centered?: boolean;
+  compact?: boolean;
+}
+
+function ContactInfo({ personalInfo, layout, centered = false, compact = false }: ContactInfoProps) {
+  const items = [
+    { icon: 'email', value: personalInfo.email },
+    { icon: 'phone', value: personalInfo.phone },
+    { icon: 'location', value: personalInfo.location },
+    { icon: 'website', value: personalInfo.website },
+    { icon: 'linkedin', value: personalInfo.linkedin },
+  ].filter(item => item.value);
+
+  if (items.length === 0) return null;
+
+  const renderIcon = (icon: string) => {
+    const iconClass = compact ? 'w-3 h-3' : 'w-3 h-3';
+    switch (icon) {
+      case 'email':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        );
+      case 'phone':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+        );
+      case 'location':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        );
+      case 'website':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+          </svg>
+        );
+      case 'linkedin':
+        return (
+          <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Inline layout: all items in a row with wrapping
+  if (layout === 'inline') {
+    return (
+      <div className={cn(
+        'flex flex-wrap gap-x-4 gap-y-1 mt-3 text-gray-600',
+        centered && 'justify-center',
+        compact && 'text-sm'
+      )}>
+        {items.map((item, i) => (
+          <span key={i} className="flex items-center gap-1">
+            {renderIcon(item.icon)}
+            {item.value}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  // Stacked layout: vertical list
+  if (layout === 'stacked') {
+    return (
+      <div className={cn(
+        'flex flex-col gap-1 mt-3 text-gray-600',
+        centered && 'items-center',
+        compact && 'text-sm'
+      )}>
+        {items.map((item, i) => (
+          <span key={i} className="flex items-center gap-1">
+            {renderIcon(item.icon)}
+            {item.value}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  // Two-column layout: items in two columns
+  if (layout === 'two-column') {
+    return (
+      <div className={cn(
+        'grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-gray-600',
+        centered && 'justify-items-center',
+        compact && 'text-sm'
+      )}>
+        {items.map((item, i) => (
+          <span key={i} className="flex items-center gap-1">
+            {renderIcon(item.icon)}
+            {item.value}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  return null;
 }
