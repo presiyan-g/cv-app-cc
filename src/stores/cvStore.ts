@@ -8,6 +8,7 @@ import type {
   LayoutSettings,
   ThemeSettings,
   HeaderSettings,
+  AccentBoxSettings,
   Revision
 } from '../features/cv/types';
 import {
@@ -15,6 +16,7 @@ import {
   DEFAULT_LAYOUT,
   DEFAULT_THEME,
   DEFAULT_HEADER,
+  DEFAULT_ACCENT_BOX,
   DEFAULT_SECTIONS
 } from '../features/cv/types';
 import { storageService } from '../services/storage/StorageService';
@@ -39,6 +41,7 @@ interface CVState {
   updateLayout: (layout: Partial<LayoutSettings>) => void;
   updateTheme: (theme: Partial<ThemeSettings>) => void;
   updateHeader: (header: Partial<HeaderSettings>) => void;
+  updateAccentBox: (accentBox: Partial<AccentBoxSettings>) => void;
   updateName: (name: string) => void;
   save: () => Promise<void>;
   saveRevision: () => Promise<void>;
@@ -64,6 +67,9 @@ export const useCVStore = create<CVState>()(
         }
         if (!cv.header) {
           cv.header = { ...DEFAULT_HEADER };
+        }
+        if (!cv.theme.accentBox) {
+          cv.theme.accentBox = { ...DEFAULT_ACCENT_BOX };
         }
       }
       set(state => {
@@ -227,6 +233,16 @@ export const useCVStore = create<CVState>()(
       set(state => {
         if (state.cv) {
           state.cv.header = { ...state.cv.header, ...header };
+          state.cv.updatedAt = Date.now();
+          state.isDirty = true;
+        }
+      });
+    },
+
+    updateAccentBox: (accentBox: Partial<AccentBoxSettings>) => {
+      set(state => {
+        if (state.cv) {
+          state.cv.theme.accentBox = { ...state.cv.theme.accentBox, ...accentBox };
           state.cv.updatedAt = Date.now();
           state.isDirty = true;
         }

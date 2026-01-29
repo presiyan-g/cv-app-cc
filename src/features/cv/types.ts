@@ -145,6 +145,16 @@ export interface LayoutSettings {
   sectionSpacing: 'compact' | 'normal' | 'relaxed';
 }
 
+export interface AccentBoxSettings {
+  enabled: boolean;
+  position: 'top' | 'left-sidebar' | 'right-sidebar';
+  backgroundColor: string;
+  textColor: string;
+  content: 'contact' | 'skills' | 'custom';
+  customText?: string;
+  width: number; // sidebar width percentage (20-40)
+}
+
 export interface ThemeSettings {
   primaryColor: string;
   accentColor: string;
@@ -153,6 +163,7 @@ export interface ThemeSettings {
   fontSize: 'small' | 'medium' | 'large';
   lineHeight: 'tight' | 'normal' | 'relaxed';
   headingStyle: 'uppercase' | 'normal';
+  accentBox: AccentBoxSettings;
 }
 
 export interface HeaderSettings {
@@ -205,6 +216,15 @@ export const DEFAULT_LAYOUT: LayoutSettings = {
   sectionSpacing: 'normal',
 };
 
+export const DEFAULT_ACCENT_BOX: AccentBoxSettings = {
+  enabled: false,
+  position: 'left-sidebar',
+  backgroundColor: '#1f2937',
+  textColor: '#ffffff',
+  content: 'contact',
+  width: 30,
+};
+
 export const DEFAULT_THEME: ThemeSettings = {
   primaryColor: '#2563eb',
   accentColor: '#3b82f6',
@@ -213,6 +233,7 @@ export const DEFAULT_THEME: ThemeSettings = {
   fontSize: 'medium',
   lineHeight: 'normal',
   headingStyle: 'normal',
+  accentBox: { ...DEFAULT_ACCENT_BOX },
 };
 
 export const DEFAULT_HEADER: HeaderSettings = {

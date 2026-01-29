@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Image,
 } from '@react-pdf/renderer';
-import type { CV, Section, ExperienceEntry, EducationEntry, SkillsEntry, ProjectEntry, CertificationEntry, LanguageEntry, AwardEntry, SummaryEntry, HeaderSettings, PersonalInfo } from '../cv/types';
+import type { CV, Section, ExperienceEntry, EducationEntry, SkillsEntry, ProjectEntry, CertificationEntry, LanguageEntry, AwardEntry, SummaryEntry, HeaderSettings, PersonalInfo, AccentBoxSettings } from '../cv/types';
 import { hexToRgba } from '../../lib/utils';
 
 // Using built-in Helvetica font (no registration needed)
@@ -237,6 +237,7 @@ interface CVDocumentProps {
 export function CVDocument({ cv }: CVDocumentProps) {
   const styles = createStyles(cv.theme);
   const { personalInfo, sections, header } = cv;
+  const accentBox = cv.theme.accentBox;
 
   // Get summary content for header if showSummaryInHeader is enabled
   const summarySection = sections.find(s => s.type === 'summary' && s.enabled);
@@ -249,27 +250,101 @@ export function CVDocument({ cv }: CVDocumentProps) {
     .filter(s => s.enabled && !(s.type === 'summary' && header.showSummaryInHeader))
     .sort((a, b) => a.order - b.order);
 
+  const renderSections = () => (
+    <>
+      {enabledSections.map(section => (
+        <View key={section.id} style={styles.section}>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+          <SectionContent section={section} styles={styles} />
+        </View>
+      ))}
+    </>
+  );
+
+  const isSidebar = accentBox?.enabled && (accentBox.position === 'left-sidebar' || accentBox.position === 'right-sidebar');
+  const isTop = accentBox?.enabled && accentBox.position === 'top';
+
+  if (isSidebar) {
+    return (
+      <Document>
+        <Page size="A4" style={{ ...styles.page, padding: 0, flexDirection: accentBox.position === 'right-sidebar' ? 'row-reverse' : 'row' }}>
+          <View style={{ width: `${accentBox.width}%`, backgroundColor: accentBox.backgroundColor, color: accentBox.textColor, padding: 20 }}>
+            <PDFAccentBoxContent accentBox={accentBox} personalInfo={personalInfo} sections={sections} />
+          </View>
+          <View style={{ flex: 1, padding: 40 }}>
+            <PDFHeader personalInfo={personalInfo} header={header} summaryContent={summaryContent} styles={styles} />
+            {renderSections()}
+          </View>
+        </Page>
+      </Document>
+    );
+  }
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <PDFHeader
-          personalInfo={personalInfo}
-          header={header}
-          summaryContent={summaryContent}
-          styles={styles}
-        />
-
-        {/* Sections */}
-        {enabledSections.map(section => (
-          <View key={section.id} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <SectionContent section={section} styles={styles} />
+        {isTop && (
+          <View style={{ backgroundColor: accentBox.backgroundColor, color: accentBox.textColor, padding: 16, marginHorizontal: -40, marginTop: -40, marginBottom: 16 }}>
+            <PDFAccentBoxContent accentBox={accentBox} personalInfo={personalInfo} sections={sections} />
           </View>
-        ))}
+        )}
+        <PDFHeader personalInfo={personalInfo} header={header} summaryContent={summaryContent} styles={styles} />
+        {renderSections()}
       </Page>
     </Document>
   );
+}
+
+function PDFAccentBoxContent({ accentBox, personalInfo, sections }: { accentBox: AccentBoxSettings; personalInfo: PersonalInfo; sections: Section[] }) {
+  if (accentBox.content === 'contact') {
+    const items = [
+      { label: 'Name', value: `${personalInfo.firstName} ${personalInfo.lastName}`.trim() },
+      { label: 'Email', value: personalInfo.email },
+      { label: 'Phone', value: personalInfo.phone },
+      { label: 'Location', value: personalInfo.location },
+      { label: 'Website', value: personalInfo.website },
+      { label: 'LinkedIn', value: personalInfo.linkedin },
+    ].filter(item => item.value);
+
+    return (
+      <View style={accentBox.position === 'top' ? { flexDirection: 'row', flexWrap: 'wrap', gap: 16 } : { gap: 10 }}>
+        {items.map((item, i) => (
+          <View key={i}>
+            <Text style={{ fontSize: 7, opacity: 0.7, color: accentBox.textColor }}>{item.label}</Text>
+            <Text style={{ fontSize: 9, fontWeight: 600, color: accentBox.textColor }}>{item.value}</Text>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (accentBox.content === 'skills') {
+    const skillsSections = sections.filter(s => s.type === 'skills' && s.enabled);
+    return (
+      <View style={{ gap: 10 }}>
+        {skillsSections.map(section =>
+          (section.entries as SkillsEntry[]).map(entry => (
+            <View key={entry.id}>
+              <Text style={{ fontSize: 8, fontWeight: 600, opacity: 0.7, color: accentBox.textColor, marginBottom: 3 }}>{entry.category}</Text>
+              <View style={accentBox.position === 'top' ? { flexDirection: 'row', flexWrap: 'wrap', gap: 4 } : { gap: 2 }}>
+                {entry.skills.map((skill, i) => (
+                  <Text key={i} style={{ fontSize: 9, color: accentBox.textColor }}>
+                    {skill}{accentBox.position === 'top' && i < entry.skills.length - 1 ? ',' : ''}
+                  </Text>
+                ))}
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+    );
+  }
+
+  if (accentBox.content === 'custom' && accentBox.customText) {
+    return <Text style={{ fontSize: 9, color: accentBox.textColor }}>{accentBox.customText}</Text>;
+  }
+
+  return null;
 }
 
 // PDF Header Component with layout variants

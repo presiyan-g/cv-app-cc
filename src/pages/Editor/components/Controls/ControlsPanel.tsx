@@ -1,15 +1,16 @@
 import { useCVStore } from '../../../../stores/cvStore';
 import { Select, Slider } from '../../../../components/ui';
 import { FONT_FAMILIES, THEME_COLORS } from '../../../../features/cv/types';
-import type { HeaderLayout, ContactLayout } from '../../../../features/cv/types';
+import type { HeaderLayout, ContactLayout, AccentBoxSettings } from '../../../../features/cv/types';
 import { cn } from '../../../../lib/utils';
 
 export function ControlsPanel() {
-  const { cv, updateLayout, updateTheme, updateHeader } = useCVStore();
+  const { cv, updateLayout, updateTheme, updateHeader, updateAccentBox } = useCVStore();
 
   if (!cv) return null;
 
   const { layout, theme, header } = cv;
+  const accentBox = theme.accentBox;
 
   return (
     <div className="p-4 pb-20 lg:pb-4 space-y-6">
@@ -246,6 +247,116 @@ export function ControlsPanel() {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Accent Box Settings */}
+      <div>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+          Accent Box
+        </h2>
+
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={accentBox?.enabled ?? false}
+              onChange={e => updateAccentBox({ enabled: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm text-gray-700">Enable accent box</span>
+          </label>
+
+          {accentBox?.enabled && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Position
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'top', label: 'Top' },
+                    { value: 'left-sidebar', label: 'Left' },
+                    { value: 'right-sidebar', label: 'Right' },
+                  ].map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => updateAccentBox({ position: option.value as AccentBoxSettings['position'] })}
+                      className={cn(
+                        'py-2 px-3 rounded-lg border text-sm font-medium transition-colors',
+                        accentBox.position === option.value
+                          ? 'bg-primary-50 border-primary-300 text-primary-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Select
+                label="Content"
+                value={accentBox.content}
+                onChange={e => updateAccentBox({ content: e.target.value as AccentBoxSettings['content'] })}
+                options={[
+                  { value: 'contact', label: 'Contact Info' },
+                  { value: 'skills', label: 'Skills' },
+                  { value: 'custom', label: 'Custom Text' },
+                ]}
+              />
+
+              {accentBox.content === 'custom' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Custom Text
+                  </label>
+                  <textarea
+                    value={accentBox.customText ?? ''}
+                    onChange={e => updateAccentBox({ customText: e.target.value })}
+                    rows={4}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                    placeholder="Enter custom text..."
+                  />
+                </div>
+              )}
+
+              {(accentBox.position === 'left-sidebar' || accentBox.position === 'right-sidebar') && (
+                <Slider
+                  label="Sidebar Width"
+                  value={accentBox.width}
+                  onChange={v => updateAccentBox({ width: v })}
+                  min={20}
+                  max={40}
+                  formatValue={v => `${Math.round(v)}%`}
+                />
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Background Color
+                </label>
+                <input
+                  type="color"
+                  value={accentBox.backgroundColor}
+                  onChange={e => updateAccentBox({ backgroundColor: e.target.value })}
+                  className="w-full h-10 rounded-lg cursor-pointer border border-gray-300"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Text Color
+                </label>
+                <input
+                  type="color"
+                  value={accentBox.textColor}
+                  onChange={e => updateAccentBox({ textColor: e.target.value })}
+                  className="w-full h-10 rounded-lg cursor-pointer border border-gray-300"
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

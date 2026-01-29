@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCVStore } from '../../../../stores/cvStore';
 import { cn, formatDate, hexToRgba } from '../../../../lib/utils';
-import type { Section, ExperienceEntry, EducationEntry, SkillsEntry, ProjectEntry, CertificationEntry, LanguageEntry, AwardEntry, SummaryEntry, HeaderSettings, PersonalInfo, ThemeSettings } from '../../../../features/cv/types';
+import type { Section, ExperienceEntry, EducationEntry, SkillsEntry, ProjectEntry, CertificationEntry, LanguageEntry, AwardEntry, SummaryEntry, HeaderSettings, PersonalInfo, ThemeSettings, AccentBoxSettings } from '../../../../features/cv/types';
 
 export function Canvas() {
   const { cv } = useCVStore();
@@ -35,6 +35,7 @@ export function Canvas() {
   if (!cv) return null;
 
   const { personalInfo, sections, layout, theme, header } = cv;
+  const accentBox = theme.accentBox;
 
   // Get summary content for header if showSummaryInHeader is enabled
   const summarySection = sections.find(s => s.type === 'summary' && s.enabled);
@@ -88,9 +89,10 @@ export function Canvas() {
       >
         <div
           className={cn(
-            'bg-white shadow-lg w-[210mm] min-h-[297mm] p-8',
+            'bg-white shadow-lg w-[210mm] min-h-[297mm]',
             fontSizeClasses[theme.fontSize],
-            lineHeightClasses[theme.lineHeight]
+            lineHeightClasses[theme.lineHeight],
+            !(accentBox?.enabled && (accentBox.position === 'left-sidebar' || accentBox.position === 'right-sidebar')) && 'p-8'
           )}
           style={{
             fontFamily: theme.fontFamily,
@@ -98,53 +100,157 @@ export function Canvas() {
             '--accent-color': theme.accentColor,
           } as React.CSSProperties}
         >
-        {/* Header / Personal Info */}
-        <HeaderRenderer
-          personalInfo={personalInfo}
-          header={header}
-          theme={theme}
-          summaryContent={summaryContent}
-          photoSizeClasses={photoSizeClasses}
-          photoShapeClasses={photoShapeClasses}
-        />
+        {/* Top Accent Box */}
+        {accentBox?.enabled && accentBox.position === 'top' && (
+          <div
+            className="px-8 py-5 -mx-8 -mt-8 mb-6"
+            style={{ backgroundColor: accentBox.backgroundColor, color: accentBox.textColor, margin: 0 }}
+          >
+            <AccentBoxContent accentBox={accentBox} personalInfo={personalInfo} sections={sections} />
+          </div>
+        )}
 
-        {/* Sections */}
-        {layout.columns === 1 ? (
-          <div className={spacingClasses[layout.sectionSpacing]}>
-            {enabledSections.map(section => (
-              <SectionRenderer key={section.id} section={section} theme={theme} />
-            ))}
+        {/* Sidebar layout wrapper */}
+        {accentBox?.enabled && (accentBox.position === 'left-sidebar' || accentBox.position === 'right-sidebar') ? (
+          <div className={cn('flex min-h-[297mm]', accentBox.position === 'right-sidebar' && 'flex-row-reverse')}>
+            {/* Sidebar */}
+            <div
+              className="p-6 shrink-0"
+              style={{
+                width: `${accentBox.width}%`,
+                backgroundColor: accentBox.backgroundColor,
+                color: accentBox.textColor,
+              }}
+            >
+              <AccentBoxContent accentBox={accentBox} personalInfo={personalInfo} sections={sections} />
+            </div>
+            {/* Main content */}
+            <div className="flex-1 p-8">
+              <HeaderRenderer
+                personalInfo={personalInfo}
+                header={header}
+                theme={theme}
+                summaryContent={summaryContent}
+                photoSizeClasses={photoSizeClasses}
+                photoShapeClasses={photoShapeClasses}
+              />
+              {layout.columns === 1 ? (
+                <div className={spacingClasses[layout.sectionSpacing]}>
+                  {enabledSections.map(section => (
+                    <SectionRenderer key={section.id} section={section} theme={theme} />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex gap-6">
+                  <div className={cn(spacingClasses[layout.sectionSpacing])} style={{ width: `${layout.splitRatio * 100}%` }}>
+                    {enabledSections.filter(s => s.column === 'left').map(section => (
+                      <SectionRenderer key={section.id} section={section} theme={theme} />
+                    ))}
+                  </div>
+                  <div className={cn(spacingClasses[layout.sectionSpacing], 'flex-1')}>
+                    {enabledSections.filter(s => s.column === 'right' || s.column === 'full').map(section => (
+                      <SectionRenderer key={section.id} section={section} theme={theme} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="flex gap-6">
-            {/* Left Column */}
-            <div
-              className={cn(spacingClasses[layout.sectionSpacing])}
-              style={{ width: `${layout.splitRatio * 100}%` }}
-            >
-              {enabledSections
-                .filter(s => s.column === 'left')
-                .map(section => (
-                  <SectionRenderer key={section.id} section={section} theme={theme} />
-                ))}
-            </div>
+          <>
+            {/* Header / Personal Info */}
+            <HeaderRenderer
+              personalInfo={personalInfo}
+              header={header}
+              theme={theme}
+              summaryContent={summaryContent}
+              photoSizeClasses={photoSizeClasses}
+              photoShapeClasses={photoShapeClasses}
+            />
 
-            {/* Right Column */}
-            <div
-              className={cn(spacingClasses[layout.sectionSpacing], 'flex-1')}
-            >
-              {enabledSections
-                .filter(s => s.column === 'right' || s.column === 'full')
-                .map(section => (
+            {/* Sections */}
+            {layout.columns === 1 ? (
+              <div className={spacingClasses[layout.sectionSpacing]}>
+                {enabledSections.map(section => (
                   <SectionRenderer key={section.id} section={section} theme={theme} />
                 ))}
-            </div>
-          </div>
+              </div>
+            ) : (
+              <div className="flex gap-6">
+                <div className={cn(spacingClasses[layout.sectionSpacing])} style={{ width: `${layout.splitRatio * 100}%` }}>
+                  {enabledSections.filter(s => s.column === 'left').map(section => (
+                    <SectionRenderer key={section.id} section={section} theme={theme} />
+                  ))}
+                </div>
+                <div className={cn(spacingClasses[layout.sectionSpacing], 'flex-1')}>
+                  {enabledSections.filter(s => s.column === 'right' || s.column === 'full').map(section => (
+                    <SectionRenderer key={section.id} section={section} theme={theme} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
         </div>
       </div>
     </div>
   );
+}
+
+interface AccentBoxContentProps {
+  accentBox: AccentBoxSettings;
+  personalInfo: PersonalInfo;
+  sections: Section[];
+}
+
+function AccentBoxContent({ accentBox, personalInfo, sections }: AccentBoxContentProps) {
+  if (accentBox.content === 'contact') {
+    const items = [
+      { label: 'Name', value: `${personalInfo.firstName} ${personalInfo.lastName}`.trim() },
+      { label: 'Email', value: personalInfo.email },
+      { label: 'Phone', value: personalInfo.phone },
+      { label: 'Location', value: personalInfo.location },
+      { label: 'Website', value: personalInfo.website },
+      { label: 'LinkedIn', value: personalInfo.linkedin },
+    ].filter(item => item.value);
+
+    return (
+      <div className={accentBox.position === 'top' ? 'flex flex-wrap gap-x-6 gap-y-1' : 'space-y-3'}>
+        {items.map((item, i) => (
+          <div key={i}>
+            <div className="text-xs opacity-70">{item.label}</div>
+            <div className="text-sm font-medium">{item.value}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (accentBox.content === 'skills') {
+    const skillsSections = sections.filter(s => s.type === 'skills' && s.enabled);
+    return (
+      <div className="space-y-3">
+        {skillsSections.map(section =>
+          (section.entries as SkillsEntry[]).map(entry => (
+            <div key={entry.id}>
+              <div className="text-xs font-semibold opacity-70 mb-1">{entry.category}</div>
+              <div className={accentBox.position === 'top' ? 'flex flex-wrap gap-1' : 'space-y-0.5'}>
+                {entry.skills.map((skill, i) => (
+                  <span key={i} className="text-sm">{skill}{accentBox.position === 'top' && i < entry.skills.length - 1 ? ',' : ''}</span>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  }
+
+  if (accentBox.content === 'custom' && accentBox.customText) {
+    return <p className="text-sm whitespace-pre-wrap">{accentBox.customText}</p>;
+  }
+
+  return null;
 }
 
 interface SectionRendererProps {
