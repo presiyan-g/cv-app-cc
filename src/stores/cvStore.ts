@@ -21,6 +21,7 @@ import {
 } from '../features/cv/types';
 import { storageService } from '../services/storage/StorageService';
 import { generateId } from '../lib/utils';
+import { getTemplateById } from '../features/templates/templates';
 
 interface CVState {
   cv: CV | null;
@@ -81,6 +82,22 @@ export const useCVStore = create<CVState>()(
 
     createCV: async (name: string, templateId: string) => {
       const now = Date.now();
+      const template = getTemplateById(templateId);
+      const sections = template
+        ? template.defaultSections.map((sc, index) => ({
+            id: generateId(),
+            type: sc.type,
+            title: sc.title,
+            enabled: sc.enabled,
+            column: sc.column,
+            order: index,
+            entries: [],
+          }))
+        : DEFAULT_SECTIONS.map(section => ({
+            ...section,
+            id: generateId(),
+            entries: [],
+          }));
       const cv: CV = {
         id: generateId(),
         name,
@@ -88,14 +105,10 @@ export const useCVStore = create<CVState>()(
         createdAt: now,
         updatedAt: now,
         personalInfo: { ...DEFAULT_PERSONAL_INFO },
-        sections: DEFAULT_SECTIONS.map(section => ({
-          ...section,
-          id: generateId(),
-          entries: [],
-        })),
-        layout: { ...DEFAULT_LAYOUT },
-        theme: { ...DEFAULT_THEME },
-        header: { ...DEFAULT_HEADER },
+        sections,
+        layout: template ? { ...template.defaultLayout } : { ...DEFAULT_LAYOUT },
+        theme: template ? { ...template.defaultTheme } : { ...DEFAULT_THEME },
+        header: template ? { ...template.defaultHeader } : { ...DEFAULT_HEADER },
       };
 
       await storageService.saveCV(cv);
